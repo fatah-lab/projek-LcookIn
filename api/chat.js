@@ -1,3 +1,9 @@
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+};
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -7,17 +13,33 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    // Parse body manually jaga-jaga
+    // Baca body dengan berbagai cara
     let body = req.body;
+
+    // Kalau body masih string, parse manual
     if (typeof body === 'string') {
-      body = JSON.parse(body);
+      try { body = JSON.parse(body); } catch(e) {}
+    }
+
+    // Kalau masih kosong, baca raw stream
+    if (!body || typeof body !== 'object') {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const raw = Buffer.concat(chunks).toString();
+      try { body = JSON.parse(raw); } catch(e) {
+        return res.status(400).json({ error: 'Body tidak bisa diparsing', raw });
+      }
     }
 
     const messages = body?.messages;
     const system = body?.system;
 
     if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: 'messages tidak valid', body: body });
+      return res.status(400).json({ error: 'messages tidak valid', body });
+    }
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: 'API key belum diset di Environment Variables' });
     }
 
     const payload = {
