@@ -20,7 +20,7 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001', // Haiku = hemat biaya
+        model: 'claude-3-5-haiku-20241022', 
         max_tokens: 1500,
         ...(system && { system }),
         messages,
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json(data);
-  } catch (err) { 
+  } catch (err) {
     return res.status(500).json({ error: 'Server error: ' + err.message });
   }
 }
