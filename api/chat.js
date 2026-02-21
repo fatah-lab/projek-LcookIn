@@ -1,9 +1,3 @@
-export const config = {
-  api: {
-    bodyParser: true,
-  },
-};
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -13,33 +7,29 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    // Baca body dengan berbagai cara
-    let body = req.body;
+    // Read raw body stream (required for non-Next.js Vercel functions)
+    const rawBody = await new Promise((resolve, reject) => {
+      let data = '';
+      req.on('data', chunk => { data += chunk.toString(); });
+      req.on('end', () => resolve(data));
+      req.on('error', reject);
+    });
 
-    // Kalau body masih string, parse manual
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch(e) {}
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch (e) {
+      return res.status(400).json({ error: 'JSON tidak valid', raw: rawBody });
     }
 
-    // Kalau masih kosong, baca raw stream
-    if (!body || typeof body !== 'object') {
-      const chunks = [];
-      for await (const chunk of req) chunks.push(chunk);
-      const raw = Buffer.concat(chunks).toString();
-      try { body = JSON.parse(raw); } catch(e) {
-        return res.status(400).json({ error: 'Body tidak bisa diparsing', raw });
-      }
-    }
-
-    const messages = body?.messages;
-    const system = body?.system;
+    const { messages, system } = body;
 
     if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: 'messages tidak valid', body });
+      return res.status(400).json({ error: 'messages tidak valid' });
     }
 
     if (!process.env.ANTHROPIC_API_KEY) {
-      return res.status(500).json({ error: 'API key belum diset di Environment Variables' });
+      return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset' });
     }
 
     const payload = {
@@ -66,6 +56,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json(data);
+
   } catch (err) {
     return res.status(500).json({ error: 'Server error: ' + err.message });
   }
