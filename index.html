@@ -850,12 +850,10 @@ async function aiParseScanText() {
   if (!text.trim()) return;
   document.getElementById('ai-parse-status').textContent='⏳ AI sedang memproses teks resep...';
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages',{
+    const response = await fetch('/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
         messages:[{role:'user',content:`Kamu adalah asisten kuliner. Dari teks berikut ini, ekstrak informasi resep dan kembalikan dalam format JSON murni (tanpa markdown):
 {"name":"nama masakan","origin":"asal daerah","portion":"untuk berapa orang","time":"waktu memasak","desc":"deskripsi singkat","ingredients":"bahan 1\\nbahan 2\\n...","steps":"langkah 1\\nlangkah 2\\n...","emoji":"emoji yang cocok"}
 
@@ -894,12 +892,11 @@ async function askAI() {
   const result = document.getElementById('ai-result');
   btn.disabled=true; loading.classList.add('active'); result.classList.remove('active');
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages',{
+    const response = await fetch('/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
+        system:'Kamu adalah Chef AI LcookIn, asisten masak terbaik Indonesia.',
         messages:[{role:'user',content:`Kamu adalah Chef AI LcookIn. Berikan resep lengkap untuk "${query}" dengan porsi ${portion} orang. 
 Format jawaban dalam HTML sederhana menggunakan tag h3 untuk nama, h4 untuk sub-judul, ul/li untuk bahan, ol/li untuk langkah. Sertakan: nama lengkap masakan, asal masakan, waktu memasak, kalori per porsi, bahan-bahan lengkap untuk ${portion} porsi, dan langkah memasak yang detail. Gunakan bahasa Indonesia yang ramah.`}]
       })
